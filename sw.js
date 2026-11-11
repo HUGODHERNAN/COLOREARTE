@@ -1,9 +1,10 @@
-const CACHE_NAME = 'colormatch-v2';
+const CACHE_NAME = 'colormatch-v3';
 
 const APP_SHELL_ASSETS = [
     './',
     './index.html',
     './manifest.webmanifest',
+    './assets/og-cover.jpg',
     './assets/icons/favicon.svg',
     './assets/icons/apple-touch-icon.png',
     './assets/icons/icon-192.png',
