@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ColorMatch — Suite de Tests Unitarios</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #2684FF;
+            color: #111111;
+            margin: 0;
+            padding: 24px;
+        }
+        .card {
+            max-width: 840px;
+            margin: 0 auto;
+            background: #FFFFFF;
+            border: 2px solid #111111;
+            box-shadow: 0 4px 0 #111111;
+            border-radius: 20px;
+            padding: 24px;
+        }
+        .summary {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 999px;
+            border: 1.5px solid #111111;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+        .pass { background: #28CD41; }
+        .fail { background: #FF3B30; color: #FFFFFF; }
+        .suite { margin-top: 16px; }
+        .case { padding: 6px 10px; border-radius: 8px; margin: 4px 0; font-size: 14px; }
+        .case.ok { background: #FAF9F5; border: 1px solid #D1D5DB; }
+        .case.err { background: #FEE2E2; border: 1px solid #DC2626; }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <h1>ColorMatch — Tests de Dominio</h1>
+        <div id="summary" class="summary">Ejecutando tests...</div>
+        <div id="results"></div>
+    </main>
+
+    <script type="module">
+        import { runAllSuites } from './testRunner.js';
+        import './color.test.js';
+        import './scoring.test.js';
+        import './gameEngine.test.js';
+
+        const report = await runAllSuites();
+        const summaryEl = document.getElementById('summary');
+        const resultsEl = document.getElementById('results');
+
+        summaryEl.textContent = `${report.passed}/${report.total} tests pasaron (${report.failed} fallidos)`;
+        summaryEl.className = `summary ${report.failed === 0 ? 'pass' : 'fail'}`;
+        window.__TEST_REPORT__ = report;
+
+        report.results.forEach((s) => {
+            const section = document.createElement('section');
+            section.className = 'suite';
+            const title = document.createElement('h2');
+            title.textContent = s.suite;
+            section.appendChild(title);
+
+            s.cases.forEach((c) => {
+                const row = document.createElement('div');
+                row.className = `case ${c.ok ? 'ok' : 'err'}`;
+                row.textContent = c.ok ? `✓ ${c.name}` : `✗ ${c.name}: ${c.error}`;
+                section.appendChild(row);
+            });
+            resultsEl.appendChild(section);
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,161 @@
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #2684FF;
+    color: #111111;
+    overflow-x: hidden;
+}
+
+/* Tipografía Serif Editorial exacta al estilo Homeroom */
+.editorial-heading {
+    font-family: 'Newsreader', Georgia, serif;
+    letter-spacing: -0.025em;
+    line-height: 1.06;
+}
+
+/* Botones Píldora y Cajas estilo Homeroom (Sin degradados, bordes negros sólidos y sombra rígida inferior) */
+.hr-pill-yellow {
+    background-color: #F7E354;
+    color: #111111;
+    border: 1.5px solid #111111;
+    box-shadow: 0 3px 0 #111111;
+    border-radius: 9999px;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
+}
+.hr-pill-yellow:hover:not(:disabled) {
+    background-color: #F2D62B;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 0 #111111;
+}
+.hr-pill-yellow:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #111111;
+}
+
+.hr-pill-white {
+    background-color: #FFFFFF;
+    color: #111111;
+    border: 1.5px solid #111111;
+    box-shadow: 0 3px 0 #111111;
+    border-radius: 9999px;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
+}
+.hr-pill-white:hover:not(:disabled) {
+    background-color: #F3F4F6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 0 #111111;
+}
+.hr-pill-white:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #111111;
+}
+
+.hr-rect-yellow {
+    background-color: #F7E354;
+    color: #111111;
+    border: 1.5px solid #111111;
+    box-shadow: 0 2px 0 #111111;
+    border-radius: 6px;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.hr-rect-yellow:hover {
+    background-color: #F2D62B;
+}
+
+.hr-card {
+    background-color: #FFFFFF;
+    border: 2px solid #111111;
+    box-shadow: 0 4px 0 #111111;
+    border-radius: 20px;
+}
+
+.hr-subcard {
+    background-color: #FAF9F5;
+    border: 1.5px solid #111111;
+    border-radius: 16px;
+}
+
+.hr-input {
+    background-color: #FFFFFF;
+    border: 1.5px solid #111111;
+    box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.06);
+    color: #111111;
+    transition: box-shadow 0.15s ease;
+}
+.hr-input:focus {
+    outline: none;
+    box-shadow: 0 3px 0 #111111;
+    background-color: #FEFCE8;
+}
+
+/* Burbuja flotante estilo "add a feature that..|" */
+.hr-speech-pill {
+    background-color: #E5E7EB;
+    border: 1.5px solid #6B7280;
+    box-shadow: 0 3px 0 #111111;
+    border-radius: 9999px;
+    border-bottom-right-radius: 4px;
+}
+
+@keyframes blinkCursor {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+.cursor-bar {
+    display: inline-block;
+    width: 2px;
+    height: 14px;
+    background-color: #F97316;
+    vertical-align: middle;
+    margin-left: 2px;
+    animation: blinkCursor 1s infinite;
+}
+
+/* Sliders limpios con bordes sólidos sin degradados decorativos */
+input[type="range"].color-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 14px;
+    border-radius: 999px;
+    border: 1.5px solid #111111;
+    background-color: #E5E7EB;
+    outline: none;
+    cursor: pointer;
+}
+input[type="range"].color-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #F7E354;
+    border: 2px solid #111111;
+    box-shadow: 0 2px 0 #111111;
+    cursor: grab;
+    transition: transform 0.1s ease;
+}
+input[type="range"].color-slider::-webkit-slider-thumb:active {
+    cursor: grabbing;
+    transform: scale(1.12);
+}
+
+/* Bandas de matiz discretas para orientar el selector sin degradados suaves */
+.hue-steps {
+    background: repeating-linear-gradient(
+        to right,
+        #FF3B30 0%, #FF3B30 16.6%,
+        #FFCC00 16.6%, #FFCC00 33.3%,
+        #28CD41 33.3%, #28CD41 50%,
+        #00C7BE 50%, #00C7BE 66.6%,
+        #2684FF 66.6%, #2684FF 83.3%,
+        #AF52DE 83.3%, #AF52DE 100%
+    );
+}
+
+@keyframes popIn {
+    0% { transform: translateY(6px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+.animate-pop {
+    animation: popIn 0.22s ease-out forwards;
+}
+

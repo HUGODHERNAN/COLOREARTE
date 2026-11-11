@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>ColorMatch — Juego Multijugador de Memoria de Color y Códigos HEX</title>
+    <meta name="description" content="Juega ColorMatch online gratis con amigos (multijugador sin límite de sala). Memoriza el color HEX en 5 segundos, adivina la tonalidad exacta en 20 segundos y compite en 10 rondas.">
+    <meta name="keywords" content="juego de colores, adivinar color hex, memoria visual, juego multijugador online, comparar colores hex, test de percepcion de color, colormatch">
+    <meta name="author" content="ColorMatch">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+    <meta name="theme-color" content="#2684FF">
+
+    <!-- Configuración PWA (Progressive Web App) para instalar como App en iOS y Android -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ColorMatch">
+    <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png">
+    <link rel="manifest" href="./manifest.webmanifest">
+
+    <!-- Preconnect para acelerar carga de fuentes y mejorar Core Web Vitals (LCP) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Open Graph / WhatsApp / Discord / Facebook Preview -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="ColorMatch">
+    <meta property="og:locale" content="es_LA">
+    <meta property="og:title" content="🎨 ColorMatch — Duelo Multijugador de Memoria de Color">
+    <meta property="og:description" content="¡Entra a la sala! Memoriza el tono en 5s y compite en 10 rondas de precisión visual con todos tus amigos.">
+    <meta property="og:image" content="https://placehold.co/1200x630/2684FF/FFFFFF.png?text=ColorMatch+%E2%80%94+Duelo+de+Colores">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Pantalla de juego de ColorMatch: Duelo de Colores entre amigos">
+
+    <!-- Twitter / X Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="🎨 ColorMatch — Duelo Multijugador de Memoria de Color">
+    <meta name="twitter:description" content="Memoriza el color en 5s, recréalo a ciegas en 20s y compite online con todos tus amigos.">
+    <meta name="twitter:image" content="https://placehold.co/1200x630/2684FF/FFFFFF.png?text=ColorMatch+%E2%80%94+Duelo+de+Colores">
+
+    <!-- Datos Estructurados JSON-LD (Schema.org VideoGame / WebApplication) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      "name": "ColorMatch — Duelo de Colores",
+      "description": "Juego web multijugador en tiempo real para comparar y memorizar códigos de color HEX entre amigos a lo largo de 10 rondas.",
+      "genre": ["Puzzle", "Trivia", "Educational", "Party Game"],
+      "playMode": "MultiPlayer",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Web Browser",
+      "inLanguage": "es",
+      "numberOfPlayers": {
+        "@type": "QuantitativeValue",
+        "minValue": 2
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      }
+    }
+    </script>
+
+    <!-- Favicon SVG estático -->
+    <link rel="icon" type="image/svg+xml" href="./assets/icons/favicon.svg">
+
+    <!-- Tailwind CSS + Configuración de Tema -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="./src/config/tailwind.config.js"></script>
+
+    <!-- Google Fonts: Newsreader (Editorial Serif), Shrikhand (Logo Script), Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,500&family=Shrikhand&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- PeerJS WebRTC P2P Library -->
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+    <!-- Estilos propios -->
+    <link rel="stylesheet" href="./src/styles/main.css">
+</head>
+<body class="min-h-screen p-3 sm:p-6 md:p-9 flex flex-col items-center selection:bg-hrYellow selection:text-black">
+
+    <!-- Notificación Toast Flotante Estilo Homeroom -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden transform transition-all duration-200 translate-y-2 opacity-0">
+        <div class="bg-white text-hrInk px-5 py-3.5 rounded-full border-2 border-hrInk shadow-[0_4px_0_#111111] flex items-center gap-3 font-semibold text-sm">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>
+            <span id="toast-msg">Notificación</span>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         BARRA DE NAVEGACIÓN ESTILO VENTANA HOMEROOM
+    =========================================== -->
+    <header class="w-full max-w-6xl bg-white border-2 border-hrInk px-3.5 sm:px-6 py-3 sm:py-3.5 flex flex-col md:flex-row md:items-center md:justify-between gap-2.5 mb-4 sm:mb-5">
+        <div class="w-full md:w-auto flex items-center justify-between md:justify-start gap-3 sm:gap-5 relative">
+            <div class="flex items-center gap-2 z-10">
+                <span class="w-3.5 h-3.5 rounded-full bg-[#FF3B30] border-[1.5px] border-hrInk inline-block"></span>
+                <span class="w-3.5 h-3.5 rounded-full bg-[#FF9500] border-[1.5px] border-hrInk inline-block"></span>
+                <span class="w-3.5 h-3.5 rounded-full bg-[#28CD41] border-[1.5px] border-hrInk inline-block"></span>
+
+                <!-- Indicador de Red P2P WebRTC -->
+                <div id="header-p2p-status" class="hidden items-center gap-1.5 bg-[#FAF9F5] border border-hrInk px-2 py-0.5 rounded-full text-[11px] font-bold text-hrInk ml-1">
+                    <span id="p2p-dot" class="w-2 h-2 rounded-full bg-[#28CD41] border border-hrInk"></span>
+                    <span id="p2p-status-text" class="hidden lg:inline">P2P Activo</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-center md:static">
+                <span class="font-logo text-2xl sm:text-3xl tracking-tight text-hrInk select-none">
+                    ColorMatch
+                </span>
+            </div>
+
+            <div class="w-12 md:hidden"></div>
+        </div>
+
+        <div id="header-controls-row" class="hidden w-full md:w-auto pt-2.5 md:pt-0 border-t-[1.5px] md:border-t-0 border-neutral-200 flex-wrap items-center justify-center md:justify-end gap-2 sm:gap-3 text-xs sm:text-sm font-medium text-hrInk">
+            <span id="header-rules-summary" class="hidden xl:inline text-neutral-600">5s Ver · 20s Buscar · 10 Rondas</span>
+
+            <div id="header-room-badge" class="hidden items-center gap-1.5 bg-[#FAF9F5] border-[1.5px] border-hrInk px-2.5 py-1 rounded-md text-xs font-mono">
+                <span class="text-neutral-500">SALA:</span>
+                <strong id="header-room-code" class="text-hrInk font-extrabold tracking-wider">----</strong>
+                <button type="button" id="btn-copy-room-code" class="text-neutral-600 hover:text-black ml-1" title="Copiar código">
+                    <i class="fa-regular fa-copy"></i>
+                </button>
+            </div>
+
+            <div id="header-user-badge" class="hidden items-center gap-1.5 hr-rect-yellow px-2.5 py-1 text-xs font-bold">
+                <i class="fa-solid fa-user text-[10px]"></i>
+                <span id="header-username" class="truncate max-w-[110px]">Jugador</span>
+            </div>
+
+            <button type="button" id="btn-leave-room" class="hidden px-2.5 py-1 rounded-md text-xs font-bold bg-[#FF3B30] text-white border-[1.5px] border-hrInk shadow-[0_2px_0_#111111] hover:opacity-90 transition items-center gap-1.5" title="Salir al menú">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Salir</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ==========================================
+         LIENZO BLANCO PRINCIPAL (ESTILO HOMEROOM)
+    =========================================== -->
+    <main class="w-full max-w-6xl bg-white border-2 border-hrInk flex-grow flex flex-col justify-center px-3.5 sm:px-10 py-6 sm:py-12 relative overflow-hidden">
+        <!-- Indicador de Conexión Inicial -->
+        <div id="view-loading" class="hidden text-center py-20 space-y-4">
+            <div class="w-14 h-14 rounded-full bg-hrYellow border-2 border-hrInk shadow-[0_3px_0_#111111] flex items-center justify-center mx-auto text-hrInk text-2xl animate-spin">
+                <i class="fa-solid fa-circle-notch"></i>
+            </div>
+            <p id="loading-status-msg" class="text-neutral-600 font-medium text-sm">Iniciando motor WebRTC P2P...</p>
+        </div>
+
+        <!-- ==========================================
+             VISTA 1: REGISTRO DE NOMBRE DE USUARIO (HERO HOMEROOM)
+        =========================================== -->
+        <section id="view-register" class="max-w-2xl w-full mx-auto animate-pop text-center relative">
+            <div class="hidden md:inline-flex items-center hr-speech-pill px-4 py-2 text-xs font-medium text-neutral-800 mb-6">
+                <span>memoriza el color en 5s..</span><span class="cursor-bar"></span>
+            </div>
+
+            <p class="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500 mb-3">
+                MULTIJUGADOR EN TIEMPO REAL · SALAS SIN LÍMITE
+            </p>
+
+            <h1 class="editorial-heading text-4xl sm:text-6xl md:text-7xl font-semibold text-hrInk mb-6">
+                Duelo de colores<br>entre amigos.
+            </h1>
+
+            <p class="text-sm sm:text-lg text-neutral-600 max-w-xl mx-auto leading-relaxed mb-8">
+                ¿Quién tiene mejor memoria visual en tu grupo? Observa el color de referencia durante <strong>5 segundos</strong>, recréalo a ciegas en <strong>20 segundos</strong> y suma puntos a lo largo de <strong>5 a 15 rondas</strong>.
+            </p>
+
+            <div id="invite-banner" class="hidden max-w-md mx-auto mb-6 bg-hrYellow border-2 border-hrInk shadow-[0_3px_0_#111111] rounded-full px-5 py-2.5 text-center">
+                <p class="text-xs text-hrInk font-bold">
+                    <i class="fa-solid fa-envelope-open-text mr-1"></i> Invitación activa para la sala <strong id="invite-code-label" class="font-mono underline"></strong>
+                </p>
+            </div>
+
+            <div class="max-w-md mx-auto space-y-4">
+                <div class="text-left">
+                    <label for="input-nickname" class="block text-[11px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5 ml-3">
+                        Registra tu nombre para entrar
+                    </label>
+                    <input
+                        type="text"
+                        id="input-nickname"
+                        maxlength="16"
+                        placeholder="Escribe tu nombre o apodo..."
+                        class="w-full px-6 py-4 rounded-full hr-input font-bold text-base text-center"
+                    >
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                    <button type="button" id="btn-submit-nickname" class="w-full sm:w-auto px-9 py-4 hr-pill-yellow font-bold text-sm sm:text-base flex items-center justify-center gap-2">
+                        <span>Entrar al Lobby</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+
+                    <button type="button" id="btn-install-pwa" class="w-full sm:w-auto px-6 py-4 hr-pill-white font-bold text-sm sm:text-base flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-mobile-screen-button"></i>
+                        <span>Instalar en Celular</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="pwa-install-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+                <div class="hr-card max-w-md w-full p-6 text-left space-y-4 animate-pop">
+                    <div class="flex items-center justify-between border-b-2 border-hrInk pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-full bg-hrYellow border border-hrInk flex items-center justify-center font-bold text-sm">
+                                <i class="fa-solid fa-download"></i>
+                            </span>
+                            <h3 class="editorial-heading text-2xl font-semibold text-hrInk">Instalar ColorMatch</h3>
+                        </div>
+                        <button type="button" data-action="close-install-modal" class="w-8 h-8 rounded-full hr-pill-white flex items-center justify-center text-xs font-bold">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <p class="text-xs sm:text-sm text-neutral-700 leading-relaxed">
+                        Puedes agregar <strong>ColorMatch</strong> a la pantalla de inicio de tu celular para abrirlo en <strong>pantalla completa como una App</strong> sin barras del navegador:
+                    </p>
+
+                    <div class="space-y-2.5 text-xs">
+                        <div class="hr-subcard p-3.5 space-y-1">
+                            <div class="font-bold text-hrInk flex items-center gap-1.5">
+                                <i class="fa-brands fa-android text-[#28CD41] text-base"></i>
+                                <span>En Android (Chrome / Edge / Brave):</span>
+                            </div>
+                            <p class="text-neutral-600">Toca el menú de <strong>3 puntos (⋮)</strong> arriba a la derecha y selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a la pantalla principal"</strong>.</p>
+                        </div>
+
+                        <div class="hr-subcard p-3.5 space-y-1">
+                            <div class="font-bold text-hrInk flex items-center gap-1.5">
+                                <i class="fa-brands fa-apple text-hrInk text-base"></i>
+                                <span>En iPhone / iPad (Safari):</span>
+                            </div>
+                            <p class="text-neutral-600">Toca el botón inferior de <strong>Compartir</strong> (<i class="fa-solid fa-arrow-up-from-bracket"></i>) y elige <strong>"Agregar a inicio"</strong>.</p>
+                        </div>
+                    </div>
+
+                    <button type="button" data-action="close-install-modal" class="w-full py-3 hr-pill-yellow font-bold text-xs sm:text-sm">
+                        ¡Entendido!
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-12 pt-8 border-t-2 border-neutral-200 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl mx-auto text-xs font-semibold text-hrInk">
+                <div class="hr-subcard p-3.5 flex items-center justify-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-[#FF3B30] border border-hrInk"></span>
+                    <span>2+ Jugadores (Sin límite)</span>
+                </div>
+                <div class="hr-subcard p-3.5 flex items-center justify-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-[#FF9500] border border-hrInk"></span>
+                    <span>5s Ver / 20s Buscar</span>
+                </div>
+                <div class="hr-subcard p-3.5 flex items-center justify-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-[#28CD41] border border-hrInk"></span>
+                    <span>5, 7, 10, 12 o 15 Rondas</span>
+                </div>
+            </div>
+        </section>
+
+        <noscript>
+            <div class="max-w-xl mx-auto mt-6 p-4 border-2 border-black bg-[#FAF9F5] text-center text-xs">
+                Para jugar a ColorMatch (Duelo Multijugador de Memoria de Color) necesitas tener JavaScript activado en tu navegador.
+            </div>
+        </noscript>
+
+        <!-- ==========================================
+             VISTA 2: MENÚ CREAR SALA O UNIRSE A SALA
+        =========================================== -->
+        <section id="view-menu" class="hidden max-w-3xl w-full mx-auto animate-pop space-y-8">
+            <div class="text-center space-y-2">
+                <p class="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">SELECCIONA MODO DE SALA</p>
+                <h2 class="editorial-heading text-4xl sm:text-5xl font-semibold text-hrInk">
+                    Hola, <span id="menu-greeting-name" class="underline decoration-hrYellow decoration-4">Jugador</span>.
+                </h2>
+                <p class="text-sm sm:text-base text-neutral-600">Crea una sala nueva para ser el Líder o escribe el código de tus amigos.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="hr-card p-6 sm:p-8 flex flex-col justify-between space-y-6">
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-full bg-hrYellow border-2 border-hrInk shadow-[0_2px_0_#111111] flex items-center justify-center text-hrInk text-lg">
+                            <i class="fa-solid fa-crown"></i>
+                        </div>
+                        <h3 class="editorial-heading text-3xl font-semibold text-hrInk">Crear nueva sala</h3>
+                        <p class="text-xs sm:text-sm text-neutral-600 leading-relaxed">
+                            Serás el <strong>Líder de la sala</strong>. Obtendrás un código de 5 letras y un link directo para invitar a todos los amigos que quieras.
+                        </p>
+                    </div>
+
+                    <button type="button" id="btn-create-room" class="w-full py-4 hr-pill-yellow font-bold text-sm sm:text-base flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Crear Sala como Líder</span>
+                    </button>
+                </div>
+
+                <div class="hr-card p-6 sm:p-8 flex flex-col justify-between space-y-6">
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-full bg-hrBlue border-2 border-hrInk shadow-[0_2px_0_#111111] flex items-center justify-center text-white text-lg">
+                            <i class="fa-solid fa-door-open"></i>
+                        </div>
+                        <h3 class="editorial-heading text-3xl font-semibold text-hrInk">Unirse a una sala</h3>
+                        <p class="text-xs sm:text-sm text-neutral-600 leading-relaxed">
+                            Ingresa el código de 5 letras que te envió el líder para entrar a la sala de espera.
+                        </p>
+
+                        <div class="pt-1">
+                            <input
+                                type="text"
+                                id="input-join-code"
+                                maxlength="6"
+                                placeholder="CÓDIGO (EJ: K7X9P)"
+                                class="w-full px-4 py-3.5 rounded-full hr-input font-mono font-extrabold text-center text-lg uppercase tracking-widest"
+                            >
+                        </div>
+                    </div>
+
+                    <button type="button" id="btn-join-room" class="w-full py-4 hr-pill-white font-bold text-sm sm:text-base flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Entrar a la Sala</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button type="button" id="btn-change-nickname" class="text-xs font-semibold text-neutral-500 hover:text-black underline">
+                    Cambiar mi nombre de usuario
+                </button>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             VISTA 3: SALA DE ESPERA (LOBBY)
+        =========================================== -->
+        <section id="view-lobby" class="hidden max-w-4xl w-full mx-auto animate-pop space-y-6">
+            <div class="hr-card p-6 sm:p-8 space-y-6">
+                <div class="flex flex-col lg:flex-row items-center justify-between gap-6 pb-6 border-b-2 border-hrInk">
+                    <div class="text-center lg:text-left space-y-1.5">
+                        <span class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold bg-hrYellow border border-hrInk">
+                            <span class="w-2 h-2 rounded-full bg-[#28CD41] border border-hrInk"></span>
+                            SALA DE ESPERA (LOBBY)
+                        </span>
+                        <h2 class="editorial-heading text-3xl sm:text-5xl font-semibold text-hrInk pt-1">Esperando al grupo.</h2>
+                        <p class="text-xs sm:text-sm text-neutral-600">Sin límite de jugadores. Comparte el código o el link directo para que se sumen:</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-center gap-3">
+                        <div class="bg-[#FAF9F5] border-2 border-hrInk shadow-[0_3px_0_#111111] rounded-2xl px-6 py-3 text-center">
+                            <span class="block text-[10px] font-bold uppercase tracking-widest text-neutral-500">Código de Sala</span>
+                            <span id="lobby-room-code" class="font-mono font-black text-2xl sm:text-3xl tracking-widest text-hrInk">-----</span>
+                        </div>
+
+                        <div class="flex flex-col gap-2">
+                            <div class="flex gap-2">
+                                <button type="button" id="btn-lobby-copy-code" class="px-4 py-2 hr-pill-white text-xs font-bold flex items-center justify-center gap-1.5">
+                                    <i class="fa-regular fa-copy"></i> Código
+                                </button>
+                                <button type="button" id="btn-lobby-copy-link" class="px-4 py-2 hr-pill-yellow text-xs font-bold flex items-center justify-center gap-1.5">
+                                    <i class="fa-solid fa-link"></i> Link Directo
+                                </button>
+                            </div>
+                            <button type="button" id="btn-lobby-whatsapp" class="px-4 py-2 rounded-full text-xs font-bold bg-[#28CD41] text-hrInk border-[1.5px] border-hrInk shadow-[0_3px_0_#111111] hover:opacity-95 transition flex items-center justify-center gap-2">
+                                <i class="fa-brands fa-whatsapp text-sm"></i> Invitar por WhatsApp
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="text-xs font-extrabold uppercase tracking-wider text-neutral-600 flex items-center gap-2">
+                            <i class="fa-solid fa-users text-hrInk"></i>
+                            Jugadores en la Sala (<span id="lobby-player-count">1</span> conectados)
+                        </h3>
+
+                        <div id="lobby-scoring-rule-badge" class="text-xs font-bold px-3.5 py-1 rounded-full bg-hrYellow text-hrInk border border-hrInk">
+                            Puntaje justo: Tu % de similitud suma directo en decimal (ej: 85.9% = +85.9 pts)
+                        </div>
+                    </div>
+
+                    <div id="lobby-players-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5"></div>
+                </div>
+
+                <div class="pt-6 border-t-2 border-hrInk">
+                    <div id="host-lobby-controls" class="hidden space-y-5">
+                        <div class="hr-subcard p-4 space-y-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-neutral-300">
+                                <div class="text-xs font-bold text-hrInk flex items-center gap-2">
+                                    <i class="fa-solid fa-flag-checkered"></i>
+                                    <span>Cantidad de Rondas de la Partida:</span>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-1.5" id="round-selector-group">
+                                    <button type="button" data-rounds="5" class="round-opt-btn px-3.5 py-1.5 hr-pill-white text-xs font-bold">5</button>
+                                    <button type="button" data-rounds="7" class="round-opt-btn px-3.5 py-1.5 hr-pill-white text-xs font-bold">7</button>
+                                    <button type="button" data-rounds="10" class="round-opt-btn px-3.5 py-1.5 hr-pill-yellow text-xs font-black">10</button>
+                                    <button type="button" data-rounds="12" class="round-opt-btn px-3.5 py-1.5 hr-pill-white text-xs font-bold">12</button>
+                                    <button type="button" data-rounds="15" class="round-opt-btn px-3.5 py-1.5 hr-pill-white text-xs font-bold">15</button>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div class="text-xs font-bold text-hrInk flex items-center gap-2">
+                                    <i class="fa-solid fa-sliders"></i>
+                                    Configuración de Colores de las Rondas (Opcional)
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" id="btn-add-bot" class="px-3.5 py-1.5 hr-pill-white text-xs font-bold">
+                                        <i class="fa-solid fa-robot mr-1"></i> + Añadir Bot IA
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="text-xs text-neutral-600">
+                                Por defecto se sortean <strong>colores HEX sorpresa</strong> para cada ronda. Si deseas fijar códigos HEX para las primeras rondas, escríbelos separados por coma (ej: <code class="font-mono font-bold text-hrInk">#FF5733, #2EC4B6, #9B5DE5</code>):
+                            </p>
+                            <input
+                                type="text"
+                                id="host-custom-colors"
+                                placeholder="Dejar vacío para colores aleatorios..."
+                                class="w-full px-4 py-2.5 rounded-full hr-input text-xs font-mono"
+                            >
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <p class="text-xs text-neutral-600 font-medium">
+                                <i class="fa-solid fa-circle-info mr-1"></i>
+                                Eres el <strong>Líder</strong>. Cuando todos estén listos, manda la partida.
+                            </p>
+                            <button type="button" id="btn-start-game" class="w-full sm:w-auto px-9 py-4 hr-pill-yellow font-black text-base flex items-center justify-center gap-2.5">
+                                <i class="fa-solid fa-play"></i>
+                                <span id="btn-start-game-label">¡Iniciar Partida (10 Rondas)!</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="guest-lobby-wait" class="hidden space-y-3 text-center py-3">
+                        <div class="hr-subcard p-3.5 max-w-md mx-auto flex items-center justify-between text-xs font-bold text-hrInk">
+                            <span><i class="fa-solid fa-flag-checkered mr-1.5"></i>Rondas elegidas por el Líder:</span>
+                            <span id="guest-rounds-pill" class="px-3 py-1 rounded-full bg-hrYellow border border-hrInk font-black">10 Rondas</span>
+                        </div>
+                        <div class="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-[#FAF9F5] border-[1.5px] border-hrInk text-hrInk text-sm font-semibold">
+                            <i class="fa-solid fa-spinner animate-spin"></i>
+                            <span>Esperando a que el Líder (<strong id="lobby-host-name">Host</strong>) inicie las <strong id="guest-lobby-rounds-count">10</strong> rondas...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             VISTA 4: FASE 1 - MEMORIZACIÓN (5 SEGUNDOS)
+        =========================================== -->
+        <section id="view-memorize" class="hidden w-full max-w-3xl mx-auto animate-pop space-y-6 text-center">
+            <div class="flex items-center justify-between bg-[#FAF9F5] border-2 border-hrInk px-5 py-3 rounded-full shadow-[0_3px_0_#111111]">
+                <span class="text-xs font-extrabold uppercase tracking-wider text-hrInk">
+                    Ronda <span id="mem-round-num">1</span> de <span id="mem-total-rounds">10</span>
+                </span>
+                <span class="text-xs font-bold bg-hrYellow px-3 py-0.5 rounded-full border border-hrInk">
+                    <i class="fa-solid fa-eye mr-1"></i> ¡MEMORIZA ESTE COLOR!
+                </span>
+                <span class="font-mono font-extrabold text-sm text-hrInk" id="mem-timer-text">5.0s</span>
+            </div>
+
+            <div class="hr-card p-6 sm:p-8 space-y-6">
+                <div class="space-y-1">
+                    <h2 class="editorial-heading text-3xl sm:text-5xl font-semibold text-hrInk">Retén el tono exacto en tu mente.</h2>
+                    <p class="text-xs sm:text-sm text-neutral-600">Solo tienes 5 segundos antes de que desaparezca</p>
+                </div>
+
+                <div id="memorize-color-box" class="w-full h-64 sm:h-80 rounded-2xl border-2 border-hrInk shadow-[0_4px_0_#111111] transition-colors duration-150 flex flex-col items-center justify-center relative overflow-hidden" style="background-color: #FF5733;">
+                    <div class="bg-white px-7 py-4 rounded-2xl border-2 border-hrInk text-hrInk shadow-[0_4px_0_#111111]">
+                        <span class="block text-[10px] uppercase tracking-widest font-bold text-neutral-500">Desaparece en</span>
+                        <span id="mem-big-countdown" class="font-mono font-black text-4xl sm:text-5xl">5.0</span>
+                    </div>
+                </div>
+
+                <div class="w-full h-4 bg-[#FAF9F5] rounded-full overflow-hidden border-[1.5px] border-hrInk">
+                    <div id="mem-progress-bar" class="h-full bg-hrBlue transition-all duration-75" style="width: 100%;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             VISTA 5: FASE 2 - BÚSQUEDA DEL COLOR (20 SEGUNDOS)
+        =========================================== -->
+        <section id="view-guess" class="hidden w-full max-w-3xl mx-auto animate-pop space-y-5">
+            <div class="hr-card p-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <span class="px-3.5 py-1 rounded-full bg-hrYellow border border-hrInk text-hrInk font-extrabold text-xs uppercase">
+                        Ronda <span id="guess-round-num">1</span> / <span id="guess-total-rounds">10</span>
+                    </span>
+                    <div>
+                        <h3 class="editorial-heading text-2xl font-semibold text-hrInk">Reconstruye el color que viste.</h3>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2.5 bg-[#FAF9F5] border-[1.5px] border-hrInk px-4 py-1.5 rounded-full">
+                    <i class="fa-solid fa-stopwatch text-[#FF3B30] text-base"></i>
+                    <span id="guess-timer-display" class="font-mono font-black text-xl text-hrInk">20.0s</span>
+                </div>
+            </div>
+
+            <div class="w-full h-3.5 bg-[#FAF9F5] rounded-full overflow-hidden border-[1.5px] border-hrInk">
+                <div id="guess-progress-bar" class="h-full bg-hrYellow transition-all duration-75" style="width: 100%;"></div>
+            </div>
+
+            <div class="hr-card p-5 sm:p-7 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                    <div class="md:col-span-5 flex flex-col items-center space-y-3">
+                        <div id="player-current-swatch" class="w-full h-48 sm:h-56 rounded-2xl border-2 border-hrInk shadow-[0_4px_0_#111111] flex items-end justify-center p-3 transition-colors duration-75" style="background-color: #808080;">
+                            <span id="player-current-hex-badge" class="px-3.5 py-1 rounded-full font-mono font-bold text-xs bg-white text-hrInk border-[1.5px] border-hrInk shadow-[0_2px_0_#111111]">
+                                #808080
+                            </span>
+                        </div>
+
+                        <div class="w-full flex items-center gap-2">
+                            <div class="relative flex-grow">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 font-mono font-bold">#</span>
+                                <input
+                                    type="text"
+                                    id="guess-hex-input"
+                                    value="808080"
+                                    maxlength="7"
+                                    class="w-full pl-8 pr-3 py-2.5 rounded-full hr-input font-mono font-bold text-sm uppercase"
+                                >
+                            </div>
+                            <input
+                                type="color"
+                                id="guess-native-picker"
+                                value="#808080"
+                                class="w-11 h-11 rounded-full bg-white border-[1.5px] border-hrInk cursor-pointer p-1"
+                                title="Abrir selector visual"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-7 space-y-4">
+                        <div class="hr-subcard p-4 space-y-3">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-neutral-600 block">1. Selector de Tonalidad (HSL)</span>
+
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-xs font-bold text-hrInk">
+                                    <span>Tono / Color (Hue)</span>
+                                    <span id="lbl-hue" class="font-mono">0°</span>
+                                </div>
+                                <input type="range" id="slider-h" min="0" max="360" value="180" class="w-full color-slider hue-steps">
+                            </div>
+
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-xs font-bold text-hrInk">
+                                    <span>Intensidad (Saturación)</span>
+                                    <span id="lbl-sat" class="font-mono">50%</span>
+                                </div>
+                                <input type="range" id="slider-s" min="0" max="100" value="50" class="w-full color-slider">
+                            </div>
+
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-xs font-bold text-hrInk">
+                                    <span>Brillo (Luminosidad)</span>
+                                    <span id="lbl-light" class="font-mono">50%</span>
+                                </div>
+                                <input type="range" id="slider-l" min="0" max="100" value="50" class="w-full color-slider">
+                            </div>
+                        </div>
+
+                        <div class="hr-subcard p-4 space-y-2.5">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-neutral-600 block">2. Ajuste Fino por Canales (RGB)</span>
+
+                            <div class="flex items-center gap-3 text-xs font-mono font-bold">
+                                <span class="w-5 text-[#FF3B30]">R</span>
+                                <input type="range" id="slider-r" min="0" max="255" value="128" class="w-full color-slider">
+                                <span id="lbl-r" class="w-8 text-right text-hrInk">128</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs font-mono font-bold">
+                                <span class="w-5 text-[#28CD41]">G</span>
+                                <input type="range" id="slider-g" min="0" max="255" value="128" class="w-full color-slider">
+                                <span id="lbl-g" class="w-8 text-right text-hrInk">128</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs font-mono font-bold">
+                                <span class="w-5 text-[#2684FF]">B</span>
+                                <input type="range" id="slider-b" min="0" max="255" value="128" class="w-full color-slider">
+                                <span id="lbl-b" class="w-8 text-right text-hrInk">128</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t-2 border-hrInk flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="text-xs font-semibold text-neutral-600 flex items-center gap-2">
+                        <i class="fa-solid fa-users-viewfinder text-hrInk"></i>
+                        <span>Jugadores listos: <strong id="guess-ready-count" class="text-hrInk">0/2</strong></span>
+                    </div>
+
+                    <button type="button" id="btn-submit-guess" class="w-full sm:w-auto px-8 py-4 hr-pill-yellow font-black text-base flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-check-double"></i>
+                        <span>¡Confirmar y Enviar Tono!</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             VISTA 6: RESULTADOS DE LA RONDA
+        =========================================== -->
+        <section id="view-round-results" class="hidden w-full max-w-4xl mx-auto animate-pop space-y-6">
+            <div class="hr-card p-6 sm:p-8 space-y-6">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-5 border-b-2 border-hrInk">
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-3.5 py-1 rounded-full text-xs font-extrabold bg-hrYellow border border-hrInk text-hrInk">
+                                Resultados Ronda <span id="res-round-num">1</span> de <span id="res-total-rounds">10</span>
+                            </span>
+                            <span id="res-scoring-rule-note" class="text-xs font-bold text-neutral-600">
+                                (Puntaje exacto = % de similitud en decimal)
+                            </span>
+                        </div>
+                        <h2 id="res-headline" class="editorial-heading text-3xl sm:text-4xl font-semibold text-hrInk mt-2">Comparación de Similitud</h2>
+                    </div>
+
+                    <div class="flex items-center gap-3 bg-[#FAF9F5] border-2 border-hrInk shadow-[0_3px_0_#111111] p-2.5 rounded-2xl">
+                        <div id="res-target-swatch" class="w-12 h-12 rounded-xl border-[1.5px] border-hrInk" style="background-color: #FF5733;"></div>
+                        <div class="pr-2">
+                            <span class="block text-[10px] font-bold uppercase tracking-wider text-neutral-500">Color Buscado</span>
+                            <span id="res-target-hex" class="font-mono font-black text-base text-hrInk">#FF5733</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="res-players-list" class="space-y-3.5"></div>
+
+                <div class="pt-5 border-t-2 border-hrInk flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="text-xs font-semibold text-neutral-600">
+                        <i class="fa-solid fa-trophy text-hrInk mr-1"></i>
+                        Puntos sumados automáticamente al marcador general.
+                    </div>
+
+                    <div id="host-next-round-controls" class="hidden w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                        <div id="next-round-custom-hex-wrap" class="relative">
+                            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 font-mono text-xs font-bold">#</span>
+                            <input
+                                type="text"
+                                id="next-round-custom-hex"
+                                maxlength="7"
+                                placeholder="HEX próx. ronda (opc)"
+                                class="w-full sm:w-48 pl-7 pr-3 py-3.5 rounded-full hr-input text-xs font-mono"
+                            >
+                        </div>
+                        <button type="button" id="btn-next-round" class="w-full sm:w-auto px-8 py-4 hr-pill-yellow font-black text-sm sm:text-base flex items-center justify-center gap-2">
+                            <span id="btn-next-round-text">Siguiente Ronda</span>
+                            <i class="fa-solid fa-forward-step"></i>
+                        </button>
+                    </div>
+
+                    <div id="guest-next-round-wait" class="hidden text-xs font-bold text-neutral-600 flex items-center gap-2">
+                        <i class="fa-solid fa-spinner animate-spin text-hrInk"></i>
+                        <span>Esperando a que el Líder pase a la siguiente ronda...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             VISTA 7: PODIO FINAL (FIN DE LAS RONDAS)
+        =========================================== -->
+        <section id="view-game-over" class="hidden w-full max-w-4xl mx-auto animate-pop space-y-6">
+            <div class="hr-card p-6 sm:p-10 space-y-8 text-center">
+                <div class="space-y-2">
+                    <div class="w-16 h-16 rounded-full bg-hrYellow border-2 border-hrInk shadow-[0_3px_0_#111111] text-hrInk text-2xl flex items-center justify-center mx-auto">
+                        <i class="fa-solid fa-crown"></i>
+                    </div>
+                    <span id="final-completed-badge" class="text-xs font-black uppercase tracking-widest text-neutral-500 block pt-2">¡Partida de 10 Rondas Completada!</span>
+                    <h2 id="final-winner-title" class="editorial-heading text-4xl sm:text-5xl font-semibold text-hrInk">¡Ganador de la Sala!</h2>
+                    <p class="text-sm text-neutral-600">Tabla final de posiciones y promedio de exactitud visual</p>
+                </div>
+
+                <div id="final-standings-list" class="space-y-3 text-left max-w-2xl mx-auto"></div>
+
+                <div class="pt-6 border-t-2 border-hrInk flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <button type="button" id="btn-copy-final-summary" class="w-full sm:w-auto px-7 py-4 hr-pill-white font-bold text-sm flex items-center justify-center gap-2">
+                        <i class="fa-regular fa-copy"></i>
+                        <span>Copiar Resultados para Amigos</span>
+                    </button>
+
+                    <button type="button" id="btn-host-rematch" class="hidden w-full sm:w-auto px-8 py-4 hr-pill-yellow font-black text-base items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        <span>Volver al Lobby (Jugar otra vez)</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="./src/main.js"></script>
+</body>
+</html>
+
