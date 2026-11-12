@@ -1,4 +1,4 @@
-const CACHE_NAME = 'colormatch-v3';
+const CACHE_NAME = 'colormatch-v4';
 
 const APP_SHELL_ASSETS = [
     './',
@@ -15,15 +15,18 @@ const APP_SHELL_ASSETS = [
     './src/domain/color.js',
     './src/domain/scoring.js',
     './src/domain/gameEngine.js',
+    './src/domain/chat.js',
     './src/network/peerTransport.js',
     './src/network/localTransport.js',
     './src/network/createTransport.js',
     './src/state/roomStore.js',
+    './src/state/chatStore.js',
     './src/ui/utils/dom.js',
     './src/ui/utils/clipboard.js',
     './src/ui/components/toast.js',
     './src/ui/components/header.js',
     './src/ui/components/colorPicker.js',
+    './src/ui/components/chatPanel.js',
     './src/ui/views/loadingView.js',
     './src/ui/views/registerView.js',
     './src/ui/views/menuView.js',

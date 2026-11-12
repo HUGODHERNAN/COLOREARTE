@@ -1,4 +1,10 @@
-import { DEFAULT_TOTAL_ROUNDS } from './config/constants.js';
+import { CHAT_JOIN_HISTORY_LIMIT, DEFAULT_TOTAL_ROUNDS } from './config/constants.js';
+import {
+    checkChatRateLimit,
+    createChatMessage,
+    getPlayerColorIndex,
+    resolveChatPayload
+} from './domain/chat.js';
 import {
     addBotPlayer,
     advanceToNextRound,
@@ -19,7 +25,9 @@ import {
 import { formatScore, getAverageAccuracy, sortFinalStandings } from './domain/scoring.js';
 import { createTransportManager } from './network/createTransport.js';
 import { setupPwaInstall } from './pwa/installPrompt.js';
+import { createChatStore } from './state/chatStore.js';
 import { createRoomStore } from './state/roomStore.js';
+import { createChatPanel } from './ui/components/chatPanel.js';
 import { createHeader } from './ui/components/header.js';
 import { createToast } from './ui/components/toast.js';
 import { copyText } from './ui/utils/clipboard.js';
@@ -36,14 +44,16 @@ import { createResultsView } from './ui/views/resultsView.js';
 function bootstrap() {
     const showToast = createToast();
     const store = createRoomStore();
+    const chatStore = createChatStore();
+    const lastChatSentByPlayer = new Map();
 
     setupPwaInstall({ showToast });
 
     const transport = createTransportManager({
-        onMessage: (msg) => {
+        onMessage: (msg, meta) => {
             const state = store.getState();
             if (state.isHost) {
-                handleHostIncomingMessage(msg);
+                handleHostIncomingMessage(msg, meta);
             } else {
                 handleGuestIncomingMessage(msg);
             }
@@ -91,7 +101,76 @@ function bootstrap() {
         });
     }
 
-    function handleHostIncomingMessage(msg) {
+    function processHostChatMessage({ playerId, kind, value }) {
+        const state = store.getState();
+        const room = state.roomData;
+        if (!room || !playerId) return false;
+
+        const player = room.players?.[playerId];
+        if (!player) return false;
+
+        const rate = checkChatRateLimit(lastChatSentByPlayer, playerId);
+        if (!rate.allowed) {
+            if (playerId === state.uid) {
+                showToast('Espera un segundo antes de enviar otro mensaje', 'warning');
+            } else {
+                transport.sendToPlayer(playerId, {
+                    type: 'CHAT_REJECTED',
+                    targetPlayerId: playerId,
+                    reason: 'Espera un segundo antes de enviar otro mensaje'
+                });
+            }
+            return false;
+        }
+
+        const resolved = resolveChatPayload({ kind, value });
+        if (!resolved.ok) return false;
+
+        const message = createChatMessage({
+            playerId,
+            playerName: player.name,
+            colorIndex: getPlayerColorIndex(room, playerId),
+            kind: resolved.kind,
+            text: resolved.text
+        });
+
+        lastChatSentByPlayer.set(playerId, message.createdAt);
+        chatStore.addMessage(message);
+        transport.broadcast({
+            type: 'CHAT_MESSAGE',
+            message
+        });
+        return true;
+    }
+
+    function handleSendChat({ kind, value }) {
+        const state = store.getState();
+        if (!state.roomData) return false;
+
+        const resolved = resolveChatPayload({ kind, value });
+        if (!resolved.ok) return false;
+
+        if (state.isHost) {
+            return processHostChatMessage({ playerId: state.uid, kind, value });
+        }
+
+        const rate = checkChatRateLimit(lastChatSentByPlayer, state.uid);
+        if (!rate.allowed) {
+            showToast('Espera un segundo antes de enviar otro mensaje', 'warning');
+            return false;
+        }
+
+        lastChatSentByPlayer.set(state.uid, Date.now());
+        transport.sendToHost({
+            type: 'CHAT_SEND',
+            playerId: state.uid,
+            kind,
+            value
+        });
+        return true;
+    }
+
+    function handleHostIncomingMessage(msg, meta) {
         const state = store.getState();
         const room = state.roomData;
         if (!room || !msg || typeof msg !== 'object') return;
@@ -106,13 +185,23 @@ function bootstrap() {
             }
             transport.sendToPlayer(msg.playerId, {
                 type: 'STATE_SYNC',
+                targetPlayerId: msg.playerId,
                 serverNow: Date.now(),
                 roomData: sanitizeRoomForGuest(res.room)
             });
+            const history = chatStore.getState().messages.slice(-CHAT_JOIN_HISTORY_LIMIT);
+            if (history.length > 0) {
+                transport.sendToPlayer(msg.playerId, {
+                    type: 'CHAT_HISTORY',
+                    targetPlayerId: msg.playerId,
+                    messages: history
+                });
+            }
             commitAndBroadcastHostRoom(res.room);
         } else if (msg.type === 'REQUEST_SYNC' && msg.playerId) {
             transport.sendToPlayer(msg.playerId, {
                 type: 'STATE_SYNC',
+                targetPlayerId: msg.playerId,
                 serverNow: Date.now(),
                 roomData: sanitizeRoomForGuest(room)
             });
@@ -124,11 +213,21 @@ function bootstrap() {
             if (res.accepted) {
                 commitAndBroadcastHostRoom(res.room);
             }
+        } else if (msg.type === 'CHAT_SEND') {
+            const senderId = meta?.senderId && meta.senderId !== 'local' ? meta.senderId : msg.playerId;
+            if (!senderId || senderId !== msg.playerId) return;
+            processHostChatMessage({
+                playerId: senderId,
+                kind: msg.kind,
+                value: msg.value
+            });
         }
     }
 
     function handleGuestIncomingMessage(msg) {
         if (!msg || typeof msg !== 'object') return;
+        const uid = store.getState().uid;
+        if (msg.targetPlayerId && msg.targetPlayerId !== uid) return;
 
         if (msg.type === 'JOIN_REJECTED') {
             showToast(msg.reason || 'No se pudo entrar a la sala', 'error');
@@ -144,15 +243,25 @@ function bootstrap() {
                 room.localPhaseEndTime = 0;
             }
             store.setState({ roomData: room, viewId: 'view-lobby' });
+        } else if (msg.type === 'CHAT_MESSAGE' && msg.message) {
+            chatStore.addMessage(msg.message);
+        } else if (msg.type === 'CHAT_HISTORY' && Array.isArray(msg.messages)) {
+            chatStore.replaceHistory(msg.messages);
+        } else if (msg.type === 'CHAT_REJECTED' && msg.reason) {
+            showToast(msg.reason, 'warning');
         }
     }
 
     function leaveRoom() {
         transport.destroy();
+        chatStore.reset();
+        lastChatSentByPlayer.clear();
         store.resetRoomSession('view-menu');
     }
 
     async function handleCreateRoom() {
+        chatStore.reset();
+        lastChatSentByPlayer.clear();
         const state = store.getState();
         store.setState({
             isHost: true,
@@ -191,6 +300,8 @@ function bootstrap() {
             return;
         }
 
+        chatStore.reset();
+        lastChatSentByPlayer.clear();
         const state = store.getState();
         store.setState({
             isHost: false,
@@ -389,7 +500,29 @@ function bootstrap() {
         }
     });
 
-    store.subscribe(viewManager.render);
+    const chatPanel = createChatPanel({
+        onSendChat: handleSendChat,
+        onToggleFloating: () => chatStore.toggleOpen(),
+        onCloseFloating: () => chatStore.setOpen(false)
+    });
+
+    chatStore.subscribe(chatPanel.render);
+    chatStore.onMessageAdded(chatPanel.showLiveBubble);
+
+    function resolveChatMode(state) {
+        if (!state.roomData || !state.currentRoomCode || state.viewId === 'view-loading') {
+            return 'hidden';
+        }
+        return state.roomData.status === 'lobby' ? 'lobby' : 'floating';
+    }
+
+    store.subscribe((state) => {
+        viewManager.render(state);
+        chatStore.setContext({
+            mode: resolveChatMode(state),
+            activePlayerId: state.uid
+        });
+    });
 
     const savedName = localStorage.getItem('colormatch_nickname');
     if (savedName) {

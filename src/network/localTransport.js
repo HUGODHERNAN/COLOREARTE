@@ -99,9 +99,11 @@ export function createLocalTransport({ onMessage, modeLabel = 'Vista Previa' }) 
         if (!activeRoomCode) return;
         const payload = { ...message, roomCode: activeRoomCode };
         postChannel(payload);
-        try {
-            localStorage.setItem(`${LOCAL_STORAGE_PREFIX}${activeRoomCode}`, JSON.stringify(payload));
-        } catch (e) {}
+        if (payload.type === 'STATE_SYNC') {
+            try {
+                localStorage.setItem(`${LOCAL_STORAGE_PREFIX}${activeRoomCode}`, JSON.stringify(payload));
+            } catch (e) {}
+        }
     }
 
     function destroy() {

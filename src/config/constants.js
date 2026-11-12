@@ -45,3 +45,21 @@ export const SOLID_AVATAR_COLORS = [
     '#AF52DE'
 ];
 
+export const CHAT_EMOJIS = ['🔥', '😂', '🎯', '🤯', '👏', '👀', '😱', '💀'];
+
+export const CHAT_PHRASES = [
+    { id: 'suban_nivel', text: 'Suban el nivel' },
+    { id: 'sobra_tiempo', text: 'Me sobra tiempo' },
+    { id: 'prendan_pantallas', text: 'Prendan las pantallas' },
+    { id: 'arranquemos', text: '¡Arranquemos! 🚀' },
+    { id: 'lo_clave', text: '¡Lo clavé! 🎯' },
+    { id: 'casi_igual', text: '¡Casi idéntico! 👀' },
+    { id: 'tono_dificil', text: '¡Qué tono difícil! 😅' },
+    { id: 'revancha', text: '¡Revancha! 🔥' }
+];
+
+export const CHAT_MAX_TEXT_LENGTH = 120;
+export const CHAT_COOLDOWN_MS = 1000;
+export const CHAT_MAX_HISTORY = 50;
+export const CHAT_JOIN_HISTORY_LIMIT = 20;
+

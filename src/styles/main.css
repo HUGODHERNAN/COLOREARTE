@@ -159,3 +159,20 @@ input[type="range"].color-slider::-webkit-slider-thumb:active {
     animation: popIn 0.22s ease-out forwards;
 }
 
+.chat-scroll-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.chat-scroll-thin::-webkit-scrollbar-thumb {
+    background-color: #D4D4D8;
+    border-radius: 999px;
+}
+.chat-scroll-thin::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-live-bubble {
+    box-shadow: 0 3px 0 #111111;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
